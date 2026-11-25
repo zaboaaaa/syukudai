@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="宿題">
+<meta name="theme-color" content="#f6f5f2">
+<title>宿題ツール</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #ffffff; --ink: #1f2328; --sub: #6a6f76; --line: #dcdad4;
+    --accent: #2f6fdb; --accent-soft: #e6eefc; --ok: #1f8a4c; --ok-soft: #e3f4ea;
+    --ng: #c8372d; --ng-soft: #fbe7e5; --warn: #a76a00; --warn-soft: #fdf1dc;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    font-size: 17px; line-height: 1.6;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  #app { max-width: 560px; margin: 0 auto; padding: 16px 16px 120px; }
+  h1 { font-size: 22px; margin: 8px 0 16px; }
+  h2 { font-size: 18px; margin: 20px 0 8px; }
+  p { margin: 8px 0; }
+  .sub { color: var(--sub); font-size: 14px; }
+  .small { font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 12px 0; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > * { flex: 1; }
+  .spread { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  button, .btn {
+    font: inherit; font-size: 17px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 12px; min-height: 48px; padding: 10px 16px; cursor: pointer; width: 100%;
+  }
+  button:disabled { opacity: .45; cursor: default; }
+  .primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .danger { color: var(--ng); }
+  .ghost { background: transparent; border-color: transparent; color: var(--accent); width: auto; min-height: 40px; padding: 6px 8px; }
+  .link { background: none; border: none; color: var(--sub); text-decoration: underline; width: auto; min-height: 36px; font-size: 14px; padding: 4px; }
+  input, textarea, select {
+    font: inherit; font-size: 17px; width: 100%; border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px; background: #fff; color: var(--ink);
+  }
+  textarea { min-height: 160px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+  label { display: block; font-size: 14px; color: var(--sub); margin: 12px 0 4px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; min-height: 44px; }
+  .topbar .title { font-weight: 600; font-size: 16px; text-align: center; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar .side { width: 88px; }
+  .topbar .side:last-child { text-align: right; }
+  .badge { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 10px; }
+  .b-en { background: #efe9fb; color: #5b3fb5; }
+  .b-ma { background: #e4f1f7; color: #1c6787; }
+  .chip { display: inline-block; font-size: 13px; border-radius: 999px; padding: 2px 10px; background: #eceae5; color: var(--sub); }
+  .chip.ok { background: var(--ok-soft); color: var(--ok); }
+  .chip.go { background: var(--accent-soft); color: var(--accent); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .msg { border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 15px; }
+  .msg.err { background: var(--ng-soft); color: var(--ng); }
+  .msg.ok { background: var(--ok-soft); color: var(--ok); }
+  .msg.info { background: var(--accent-soft); color: #234f9c; }
+  .msg.warn { background: var(--warn-soft); color: var(--warn); }
+  .progress { height: 6px; background: #e4e2dc; border-radius: 3px; overflow: hidden; margin: 4px 0 16px; }
+  .progress > div { height: 100%; background: var(--accent); }
+  .prompt { font-size: 19px; white-space: pre-wrap; margin: 8px 0 16px; }
+  .unit { font-size: 13px; color: var(--sub); }
+  .choices button { text-align: left; margin: 8px 0; padding: 12px 16px; }
+  .choices button.sel { border: 2px solid var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .figure { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px; margin: 8px 0 16px; }
+  .figure svg { width: 100%; height: auto; display: block; }
+  .figure .note { font-size: 12px; color: var(--sub); text-align: right; padding: 0 4px; }
+  .figerr { color: var(--ng); font-size: 14px; padding: 8px; }
+  .navbar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(246,245,242,.96); border-top: 1px solid var(--line);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .navbar .inner { max-width: 560px; margin: 0 auto; display: flex; gap: 10px; }
+  .navbar .inner > * { flex: 1; }
+  .numdisp { font-size: 26px; font-family: ui-monospace, Menlo, monospace; min-height: 56px; padding: 8px 14px; border: 2px solid var(--accent);
+    border-radius: 12px; background: #fff; display: flex; align-items: center; word-break: break-all; }
+  .numdisp.empty { color: #b0b3b8; border-color: var(--line); }
+  .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+  .keypad button { font-size: 22px; min-height: 56px; padding: 0; }
+  .keypad .fn { background: #eceae5; }
+  .order-built { min-height: 64px; border: 2px dashed var(--line); border-radius: 12px; padding: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; background: #fff; }
+  .order-pool { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .tok { width: auto; min-height: 44px; padding: 6px 14px; font-size: 18px; }
+  .order-built .tok { background: var(--accent-soft); border-color: var(--accent); }
+  .tok.used { visibility: hidden; }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .grid button { min-height: 52px; padding: 0; font-weight: 600; }
+  .grid button.done { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .grid button.todo { border: 2px solid var(--ng); color: var(--ng); }
+  .qrow { border-top: 1px solid var(--line); padding: 12px 0; }
+  .qrow:first-child { border-top: none; }
+  .mark { font-size: 22px; font-weight: 700; width: 36px; text-align: center; flex: none; }
+  .mark.o { color: var(--ok); } .mark.x { color: var(--ng); }
+  .qtext { flex: 1; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .actions { display: flex; gap: 8px; margin-top: 8px; padding-left: 44px; }
+  .actions button { min-height: 40px; font-size: 15px; padding: 6px 10px; }
+  .answerbox { margin: 8px 0 0 44px; background: var(--warn-soft); border-radius: 10px; padding: 10px 12px; font-size: 15px; }
+  .code { font-family: ui-monospace, Menlo, monospace; font-size: 22px; letter-spacing: 1px; word-break: break-all; text-align: center;
+    background: #fff; border: 2px solid var(--accent); border-radius: 12px; padding: 16px 12px; user-select: all; -webkit-user-select: all; }
+  .pin { font-size: 32px; letter-spacing: 14px; text-align: center; font-family: ui-monospace, Menlo, monospace; }
+  .tabs { display: flex; gap: 6px; margin: 8px 0 16px; background: #eceae5; padding: 4px; border-radius: 12px; }
+  .tabs button { border: none; background: transparent; min-height: 40px; font-size: 15px; padding: 6px; }
+  .tabs button.on { background: #fff; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 8px 4px; text-align: left; }
+  th { color: var(--sub); font-weight: 500; }
+  .marks { font-family: ui-monospace, Menlo, monospace; font-size: 15px; line-height: 1.9; word-break: break-all; }
+  .marks span { display: inline-block; min-width: 52px; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 50; }
+  .dialog { background: #fff; border-radius: 16px; padding: 20px; max-width: 420px; width: 100%; }
+  .dialog p { white-space: pre-wrap; }
+  .feedback { font-size: 28px; font-weight: 700; text-align: center; padding: 16px; border-radius: 12px; margin: 12px 0; }
+  .feedback.o { background: var(--ok-soft); color: var(--ok); }
+  .feedback.x { background: var(--ng-soft); color: var(--ng); }
+  .mono { font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =====================================================================
+   宿題ツール (A機能: 先生用 / B機能: 生徒用)
+   ---------------------------------------------------------------------
+   番号の設定: 下の PASS_A_HASH と PASS_B_HASH が空のときにページを開くと、
+   「初期設定」画面が出ます。そこで決めた番号から作られた2行を、
+   この下の2行と差し替えてください。
+   ===================================================================== */
+const CONFIG = {
+  PASS_A_HASH: '',
+  PASS_B_HASH: '',
+  SALT: 'kq-salt-2026',
+  HOMEWORK_PATH: 'homework.json',
+  KEY: 'kq-key-2026-v1'
+};
+
+/* ---------- 小道具 ---------- */
+const $app = document.getElementById('app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+async function sha256hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h >>> 0;
+}
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0);
+  };
+}
+function bytesToB64(bytes) { let s = ''; for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s); }
+function b64ToBytes(b64) { const s = atob(b64.replace(/\s+/g, '')); const out = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i); return out; }
+const utf8ToB64 = str => bytesToB64(new TextEncoder().encode(str));
+const b64ToUtf8 = b64 => new TextDecoder().decode(b64ToBytes(b64));
+const SUBJ = { english: { code: 0, name: '英語', cls: 'b-en' }, math: { code: 1, name: '数学', cls: 'b-ma' }, other: { code: 2, name: 'その他', cls: '' } };
+const subjByCode = c => Object.keys(SUBJ).find(k => SUBJ[k].code === c) || 'other';
+const subjName = s => (SUBJ[s] || SUBJ.other).name;
+const subjBadge = s => `<span class="badge ${(SUBJ[s] || SUBJ.other).cls}">${esc(subjName(s))}</span>`;
+const WD = ['日','月','火','水','木','金','土'];
+function fmtDue(d) {
+  if (!d) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d); if (!m) return esc(d);
+  const dt = new Date(+m[1], +m[2] - 1, +m[3]);
+  return `${+m[2]}/${+m[3]}(${WD[dt.getDay()]})`;
+}
+function fmtDate(dt) {
+  const p = n => String(n).padStart(2, '0');
+  return `${dt.getFullYear()}/${p(dt.getMonth() + 1)}/${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`;
+}
+function toast(text, kind) {
+  const el = document.createElement('div');
+  el.className = 'msg ' + (kind || 'info');
+  el.style.cssText = 'position:fixed;left:16px;right:16px;top:calc(12px + env(safe-area-inset-top));z-index:60;max-width:528px;margin:0 auto;box-shadow:0 4px 12px rgba(0,0,0,.12)';
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2400);
+}
+function confirmBox(message, okLabel, cancelLabel) {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="dialog"><p>${esc(message)}</p><div class="row" style="margin-top:16px">
+      <button data-v="0">${esc(cancelLabel || 'やめる')}</button><button class="primary" data-v="1">${esc(okLabel || 'OK')}</button></div></div>`;
+    ov.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      ov.remove(); resolve(b.dataset.v === '1');
+    });
+    document.body.appendChild(ov);
+  });
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:-1000px'; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e2) {}
+    ta.remove(); return ok;
+  }
+}
+async function shareText(text) {
+  if (navigator.share) { try { await navigator.share({ text }); return true; } catch (e) { return false; } }
+  const ok = await copyText(text); toast(ok ? 'コピーしました。LINEに貼り付けてください' : 'コピーできませんでした', ok ? 'ok' : 'err'); return ok;
+}
+
+/* ---------- 正解の難読化 ---------- */
+const seedOf = (hwNo, si, pi) => (hwNo * 4096 + si * 128 + pi) >>> 0;
+function obf(str, seed) {
+  const bytes = new TextEncoder().encode(str);
+  const r = mulberry32(seed ^ fnv1a(CONFIG.KEY));
+  for (let i = 0; i < bytes.length; i++) bytes[i] ^= (r() & 255);
+  return bytesToB64(bytes);
+}
+function deobf(b64, seed) {
+  const bytes = b64ToBytes(b64);
+  const r = mulberry32(seed ^ fnv1a(CONFIG.KEY));
+  for (let i = 0; i < bytes.length; i++) bytes[i] ^= (r() & 255);
+  return new TextDecoder().decode(bytes);
+}
+
+/* ---------- 問題データの検査 ---------- */
+const TYPES = ['choice', 'text', 'number', 'order'];
+function validateHomework(src) {
+  const errors = [];
+  if (!src || typeof src !== 'object') return { errors: ['JSONとして読めません'] };
+  if (src.format !== 'kq-homework/1') errors.push('format が "kq-homework/1" ではありません');
+  if (!Array.isArray(src.sets) || src.sets.length < 1) { errors.push('sets(教科ごとの宿題)が1つもありません'); return { errors }; }
+  if (src.sets.length > 3) errors.push('sets は3つまでです');
+  const seen = {};
+  src.sets.forEach((s, si) => {
+    const where = `${si + 1}つ目の教科`;
+    if (!SUBJ[s.subject]) errors.push(`${where}: subject は english / math / other のどれかにしてください`);
+    else if (seen[s.subject]) errors.push(`${where}: 同じ教科(${subjName(s.subject)})が2つあります`);
+    seen[s.subject] = true;
+    if (s.due && !/^\d{4}-\d{2}-\d{2}$/.test(s.due)) errors.push(`${where}: due は 2026-11-30 の形にしてください`);
+    if (!Array.isArray(s.problems) || s.problems.length < 1) { errors.push(`${where}: problems が空です`); return; }
+    if (s.problems.length > 60) errors.push(`${where}: 問題は60問までです(結果コードを30文字以内にするため)`);
+    s.problems.forEach((p, pi) => {
+      const w = `${where} ${pi + 1}問目`;
+      if (!p || typeof p !== 'object') { errors.push(`${w}: 形が正しくありません`); return; }
+      if (!TYPES.includes(p.type)) errors.push(`${w}: type は choice / text / number / order のどれかにしてください`);
+      if (typeof p.prompt !== 'string' || !p.prompt.trim()) errors.push(`${w}: prompt(問題文)がありません`);
+      if (p.type === 'choice') {
+        if (!Array.isArray(p.choices) || p.choices.length < 2 || p.choices.length > 6) errors.push(`${w}: choices は2〜6個にしてください`);
+        else if (!Number.isInteger(p.answer) || p.answer < 0 || p.answer >= p.choices.length) errors.push(`${w}: answer は 0〜${p.choices.length - 1} の番号にしてください`);
+      }
+      if (p.type === 'text' || p.type === 'number') {
+        if (!Array.isArray(p.answers) || !p.answers.length || p.answers.some(a => typeof a !== 'string' || !a.trim())) errors.push(`${w}: answers(正解リスト)がありません`);
+      }
+      if (p.type === 'order') {
+        if (!Array.isArray(p.items) || p.items.length < 2) errors.push(`${w}: items(並べる語句)は2つ以上必要です`);
+      }
+      if (p.figure != null) {
+        const f = p.figure;
+        if (typeof f !== 'object') errors.push(`${w}: figure の形が正しくありません`);
+        else { const t = renderFigure(f, true); if (t) errors.push(`${w}: 図 — ${t}`); }
+      }
+    });
+  });
+  return { errors };
+}
+
+/* ---------- 宿題ファイルを作る ---------- */
+function shuffledIdx(n, rnd) {
+  const idx = Array.from({ length: n }, (_, i) => i);
+  for (let t = 0; t < 10; t++) {
+    for (let i = n - 1; i > 0; i--) { const j = rnd() % (i + 1); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    if (idx.some((v, i) => v !== i)) break;
+  }
+  return idx;
+}
+function buildHomeworkFile(src, hwNo) {
+  return {
+    format: 'kq-hwfile/1', hwNo, updatedAt: new Date().toISOString(),
+    sets: src.sets.map((s, si) => ({
+      subject: s.subject, title: s.title || '', due: s.due || '',
+      problems: s.problems.map((p, pi) => {
+        const seed = seedOf(hwNo, si, pi);
+        const out = { type: p.type, prompt: p.prompt };
+        if (p.unit) out.unit = p.unit;
+        if (p.figure) out.figure = p.figure;
+        if (p.caseSensitive) out.cs = true;
+        const sec = {};
+        if (p.explanation) sec.e = p.explanation;
+        if (p.type === 'choice') { out.choices = p.choices; sec.a = p.answer; }
+        else if (p.type === 'order') {
+          const idx = shuffledIdx(p.items.length, mulberry32(seed ^ 0x9e3779b9));
+          out.items = idx.map(i => p.items[i]);
+          out.sep = p.sep != null ? p.sep : ' ';
+          sec.o = p.items.map((_, k) => idx.indexOf(k));
+        } else sec.a = p.answers;
+        out.k = obf(JSON.stringify(sec), seed);
+        return out;
+      })
+    }))
+  };
+}
+function secretOf(hw, si, pi) {
+  try { return JSON.parse(deobf(hw.sets[si].problems[pi].k, seedOf(hw.hwNo, si, pi))); } catch (e) { return {}; }
+}
+
+/* ---------- 採点 ---------- */
+function normText(s, cs) {
+  let t = String(s == null ? '' : s).normalize('NFKC').replace(/[‘’′]/g, "'").replace(/[“”]/g, '"');
+  t = t.replace(/\s+/g, ' ').trim().replace(/[.。]+$/, '').trim();
+  return cs ? t : t.toLowerCase();
+}
+function normNum(s) {
+  return String(s == null ? '' : s).normalize('NFKC').replace(/[−ーｰ‐‑‒–—]/g, '-')
+    .replace(/\s+/g, '').toLowerCase();
+}
+function judge(p, sec, resp) {
+  if (resp == null) return false;
+  if (p.type === 'choice') return resp === sec.a;
+  if (p.type === 'order') return Array.isArray(resp) && Array.isArray(sec.o) && resp.length === sec.o.length && resp.every((v, i) => v === sec.o[i]);
+  const list = Array.isArray(sec.a) ? sec.a : [];
+  if (p.type === 'number') {
+    const r = normNum(resp); if (!r) return false;
+    return list.some(a => {
+      const n = normNum(a); if (n === r) return true;
+      const num = /^-?(\d+\.?\d*|\.\d+)$/;
+      return num.test(n) && num.test(r) && Math.abs(parseFloat(n) - parseFloat(r)) < 1e-9;
+    });
+  }
+  const r = normText(resp, p.cs); if (!r) return false;
+  return list.some(a => normText(a, p.cs) === r);
+}
+function answerText(p, sec) {
+  if (p.type === 'choice') return (p.choices || [])[sec.a];
+  if (p.type === 'order') return (sec.o || []).map(i => p.items[i]).join(p.sep != null ? p.sep : ' ');
+  return (sec.a || []).join(' / ');
+}
+
+/* ---------- 結果コード ----------
+   中身: 版(2) 教科(2) 宿題番号(10) 表示時刻[分](22) 問題数(6) 結果(2×問題数)
+   これに確認用16ビットを付け、確認用の値を種にして本体をかき混ぜる。
+   問題ごとの結果: 0=×のまま 1=初回で○ 2=解き直しで○ 3=解答を見た */
+const B64U = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const EPOCH = Date.UTC(2025, 11, 31, 15, 0, 0); // 2026-01-01 00:00 (日本時間)
+const STATE_LABEL = ['×のまま', '初回で○', '解き直しで○', '解答を見た'];
+function pushBits(arr, val, n) { for (let i = n - 1; i >= 0; i--) arr.push((val >>> i) & 1); }
+function readBits(arr, pos, n) { let v = 0; for (let i = 0; i < n; i++) v = (v * 2) + arr[pos + i]; return v; }
+function streamBits(check, n) {
+  const r = mulberry32((fnv1a(CONFIG.KEY + ':code') ^ Math.imul(check + 1, 0x9E3779B1)) >>> 0);
+  const out = []; let w = 0, left = 0;
+  for (let i = 0; i < n; i++) { if (!left) { w = r(); left = 32; } out.push(w & 1); w >>>= 1; left--; }
+  return out;
+}
+function encodeResult({ subject, hwNo, minutes, states }) {
+  const n = states.length;
+  if (n < 1 || n > 63) throw new Error('問題数が範囲外です');
+  const P = [];
+  pushBits(P, 1, 2); pushBits(P, SUBJ[subject] ? SUBJ[subject].code : 2, 2);
+  pushBits(P, hwNo & 1023, 10); pushBits(P, Math.max(0, Math.min(minutes, 4194303)), 22);
+  pushBits(P, n, 6); states.forEach(s => pushBits(P, s & 3, 2));
+  const check = fnv1a(CONFIG.KEY + '|' + P.join('')) & 0xffff;
+  const ks = streamBits(check, P.length);
+  const all = []; pushBits(all, check, 16); P.forEach((b, i) => all.push(b ^ ks[i]));
+  while (all.length % 6) all.push(0);
+  let s = ''; for (let i = 0; i < all.length; i += 6) s += B64U[readBits(all, i, 6)];
+  return s;
+}
+function decodeResult(code) {
+  const c = String(code || '').normalize('NFKC').replace(/\s+/g, '');
+  if (!c) throw new Error('コードが空です');
+  const bits = [];
+  for (const ch of c) { const v = B64U.indexOf(ch); if (v < 0) throw new Error('コードに使えない文字が入っています: ' + ch); pushBits(bits, v, 6); }
+  if (bits.length < 16 + 42 + 2) throw new Error('コードが短すぎます');
+  const check = readBits(bits, 0, 16);
+  const body = bits.slice(16);
+  const ks = streamBits(check, body.length);
+  const P = body.map((b, i) => b ^ ks[i]);
+  const ver = readBits(P, 0, 2), sc = readBits(P, 2, 2), hwNo = readBits(P, 4, 10), minutes = readBits(P, 14, 22), n = readBits(P, 36, 6);
+  if (ver !== 1) throw new Error('コードの形式が違います(写し間違いの可能性があります)');
+  const need = Math.ceil((16 + 42 + 2 * n) / 6);
+  if (n < 1 || c.length !== need) throw new Error('コードの長さが合いません(写し間違いの可能性があります)');
+  const states = []; for (let i = 0; i < n; i++) states.push(readBits(P, 42 + 2 * i, 2));
+  const plain = P.slice(0, 42 + 2 * n);
+  if ((fnv1a(CONFIG.KEY + '|' + plain.join('')) & 0xffff) !== check) throw new Error('確認用の数字が合いません(写し間違いか、書き換えられています)');
+  return { subject: subjByCode(sc), hwNo, minutes, states, n, date: new Date(EPOCH + minutes * 60000) };
+}
+const nowMinutes = () => Math.floor((Date.now() - EPOCH) / 60000);
+
+/* ---------- 図形 ---------- */
+function renderFigure(f, checkOnly) {
+  try {
+    const v = Array.isArray(f.view) && f.view.length === 4 ? f.view : [0, 0, 10, 6];
+    const [x0, y0, x1, y1] = v.map(Number);
+    if (!(x1 > x0 && y1 > y0)) throw new Error('view の範囲が正しくありません');
+    const W = 320, sc = W / (x1 - x0), H = (y1 - y0) * sc;
+    const pts = f.points || {};
+    const P = ref => {
+      const c = typeof ref === 'string' ? pts[ref] : ref;
+      if (!Array.isArray(c) || c.length < 2 || !isFinite(c[0]) || !isFinite(c[1])) throw new Error('点 ' + JSON.stringify(ref) + ' がありません');
+      return [(c[0] - x0) * sc, (y1 - c[1]) * sc];
+    };
+    const clip = (p, d, ray) => {
+      let tmin = ray ? 0 : -1e9, tmax = 1e9;
+      const lo = [0, 0], hi = [W, H];
+      for (let k = 0; k < 2; k++) {
+        if (Math.abs(d[k]) < 1e-12) { if (p[k] < lo[k] || p[k] > hi[k]) return null; }
+        else { const t1 = (lo[k] - p[k]) / d[k], t2 = (hi[k] - p[k]) / d[k]; tmin = Math.max(tmin, Math.min(t1, t2)); tmax = Math.min(tmax, Math.max(t1, t2)); }
+      }
+      if (tmin > tmax) return null;
+      return [[p[0] + d[0] * tmin, p[1] + d[1] * tmin], [p[0] + d[0] * tmax, p[1] + d[1] * tmax]];
+    };
+    const r1 = n => Math.round(n * 10) / 10;
+    const L = (a, b, extra) => `<line x1="${r1(a[0])}" y1="${r1(a[1])}" x2="${r1(b[0])}" y2="${r1(b[1])}" ${extra || ''}/>`;
+    const T = (p, text, extra) => `<text x="${r1(p[0])}" y="${r1(p[1])}" ${extra || ''}>${esc(text)}</text>`;
+    const unit = (d) => { const l = Math.hypot(d[0], d[1]) || 1; return [d[0] / l, d[1] / l]; };
+    const back = [], body = [], labels = [];
+    // 座標軸と方眼
+    if (f.axes) {
+      const ax = f.axes === true ? {} : f.axes;
+      if (ax.grid) {
+        for (let x = Math.ceil(x0); x <= Math.floor(x1); x++) back.push(L(P([x, y0]), P([x, y1]), 'stroke="#e2e0da" stroke-width="1"'));
+        for (let y = Math.ceil(y0); y <= Math.floor(y1); y++) back.push(L(P([x0, y]), P([x1, y]), 'stroke="#e2e0da" stroke-width="1"'));
+      }
+      if (y0 <= 0 && y1 >= 0) back.push(L(P([x0, 0]), P([x1, 0]), 'stroke="#555" stroke-width="1.2" marker-end="url(#ar)"'));
+      if (x0 <= 0 && x1 >= 0) back.push(L(P([0, y0]), P([0, y1]), 'stroke="#555" stroke-width="1.2" marker-end="url(#ar)"'));
+      if (y0 <= 0 && y1 >= 0) labels.push(T([W - 4, P([0, 0])[1] + 18], 'x', 'font-style="italic" text-anchor="end" font-size="15"'));
+      if (x0 <= 0 && x1 >= 0) labels.push(T([P([0, 0])[0] + 10, 12], 'y', 'font-style="italic" font-size="15"'));
+      if (x0 <= 0 && x1 >= 0 && y0 <= 0 && y1 >= 0) labels.push(T([P([0, 0])[0] - 6, P([0, 0])[1] + 16], 'O', 'font-style="italic" text-anchor="end" font-size="14"'));
+      if (ax.ticks) {
+        const st = Number(ax.ticks) || 1;
+        for (let x = Math.ceil(x0 / st) * st; x <= x1; x += st) if (Math.abs(x) > 1e-9) labels.push(T([P([x, 0])[0], P([x, 0])[1] + 15], x, 'text-anchor="middle" font-size="11" fill="#666"'));
+        for (let y = Math.ceil(y0 / st) * st; y <= y1; y += st) if (Math.abs(y) > 1e-9) labels.push(T([P([0, y])[0] - 5, P([0, y])[1] + 4], y, 'text-anchor="end" font-size="11" fill="#666"'));
+      }
+    }
+    const stroke = 'stroke="#222" stroke-width="1.6" fill="none" stroke-linecap="round"';
+    for (const it of (f.items || [])) {
+      if (it.segment) body.push(L(P(it.segment[0]), P(it.segment[1]), stroke + (it.dash ? ' stroke-dasharray="5 4"' : '')));
+      else if (it.line || it.ray) {
+        const [a, b] = (it.line || it.ray).map(P);
+        const seg = clip(a, [b[0] - a[0], b[1] - a[1]], !!it.ray);
+        if (seg) {
+          body.push(L(seg[0], seg[1], stroke + (it.dash ? ' stroke-dasharray="5 4"' : '')));
+          if (it.label) { const d = unit([seg[1][0] - seg[0][0], seg[1][1] - seg[0][1]]); const e = seg[1]; labels.push(T([e[0] - d[0] * 14 - d[1] * 12, e[1] - d[1] * 14 + d[0] * 12 + 5], it.label, 'font-style="italic" font-size="16" text-anchor="middle"')); }
+        }
+      } else if (it.polygon) {
+        const ps = it.polygon.map(P);
+        body.push(`<polygon points="${ps.map(p => r1(p[0]) + ',' + r1(p[1])).join(' ')}" stroke="#222" stroke-width="1.6" stroke-linejoin="round" fill="${it.fill ? 'rgba(47,111,219,.13)' : 'none'}"/>`);
+      } else if (it.circle) {
+        const c = P(it.circle[0]);
+        const r = typeof it.circle[1] === 'number' ? it.circle[1] * sc : Math.hypot(P(it.circle[1])[0] - c[0], P(it.circle[1])[1] - c[1]);
+        body.push(`<circle cx="${r1(c[0])}" cy="${r1(c[1])}" r="${r1(r)}" ${stroke}${it.dash ? ' stroke-dasharray="5 4"' : ''}/>`);
+      } else if (it.angle) {
+        const [a, b, c] = it.angle.map(P);
+        const u = unit([a[0] - b[0], a[1] - b[1]]), w = unit([c[0] - b[0], c[1] - b[1]]);
+        if (it.right) {
+          const s = 11;
+          body.push(`<polyline points="${r1(b[0] + u[0] * s)},${r1(b[1] + u[1] * s)} ${r1(b[0] + (u[0] + w[0]) * s)},${r1(b[1] + (u[1] + w[1]) * s)} ${r1(b[0] + w[0] * s)},${r1(b[1] + w[1] * s)}" stroke="#222" stroke-width="1.2" fill="none"/>`);
+        } else {
+          const a1 = Math.atan2(u[1], u[0]);
+          let dl = Math.atan2(w[1], w[0]) - a1;
+          while (dl <= -Math.PI) dl += 2 * Math.PI; while (dl > Math.PI) dl -= 2 * Math.PI;
+          const n = Math.max(1, Math.min(3, it.n || 1)), R = it.r ? it.r * sc : 20;
+          for (let k = 0; k < n; k++) {
+            const rr = R + k * 4;
+            const s = [b[0] + rr * Math.cos(a1), b[1] + rr * Math.sin(a1)], e = [b[0] + rr * Math.cos(a1 + dl), b[1] + rr * Math.sin(a1 + dl)];
+            body.push(`<path d="M${r1(s[0])} ${r1(s[1])}A${rr} ${rr} 0 0 ${dl > 0 ? 1 : 0} ${r1(e[0])} ${r1(e[1])}" stroke="#c8372d" stroke-width="1.3" fill="none"/>`);
+          }
+          if (it.text) {
+            const m = a1 + dl / 2, rr = R + (n - 1) * 4 + 14 + Math.max(0, String(it.text).length - 2) * 3;
+            labels.push(T([b[0] + rr * Math.cos(m), b[1] + rr * Math.sin(m) + 5], it.text, 'text-anchor="middle" font-size="14" fill="#c8372d"'));
+          }
+        }
+      } else if (it.tick || it.parallel) {
+        const [a, b] = (it.tick || it.parallel).map(P);
+        const d = unit([b[0] - a[0], b[1] - a[1]]), nn = [-d[1], d[0]], m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+        const n = Math.max(1, Math.min(3, it.n || 1));
+        for (let k = 0; k < n; k++) {
+          const off = (k - (n - 1) / 2) * (it.tick ? 4 : 6);
+          const c = [m[0] + d[0] * off, m[1] + d[1] * off];
+          if (it.tick) body.push(L([c[0] - nn[0] * 6, c[1] - nn[1] * 6], [c[0] + nn[0] * 6, c[1] + nn[1] * 6], 'stroke="#222" stroke-width="1.3"'));
+          else body.push(`<polyline points="${r1(c[0] - d[0] * 6 - nn[0] * 5)},${r1(c[1] - d[1] * 6 - nn[1] * 5)} ${r1(c[0])},${r1(c[1])} ${r1(c[0] - d[0] * 6 + nn[0] * 5)},${r1(c[1] - d[1] * 6 + nn[1] * 5)}" stroke="#222" stroke-width="1.3" fill="none"/>`);
+        }
+      } else if (it.graph) {
+        const [a, bb] = it.graph.map(Number);
+        const p0 = P([x0, a * x0 + bb]);
+        const seg = clip(p0, [1, -a], false);
+        if (seg) {
+          body.push(L(seg[0], seg[1], 'stroke="#2f6fdb" stroke-width="1.8"'));
+          if (it.label) { const e = seg[0][0] > seg[1][0] ? seg[0] : seg[1]; labels.push(T([Math.min(e[0], W - 4), Math.max(14, Math.min(e[1] + (a > 0 ? 16 : -6), H - 4))], it.label, 'text-anchor="end" font-size="13" fill="#2f6fdb"')); }
+        }
+      } else if (it.text != null && it.at) {
+        labels.push(T(P(it.at), it.text, `text-anchor="middle" font-size="${it.size || 14}"`));
+      } else if (it.dot) {
+        const p = P(it.dot); body.push(`<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="3" fill="#222"/>`);
+      } else if (!checkOnly) { /* 知らない部品は無視 */ }
+    }
+    // 点の名前
+    const names = Object.keys(pts);
+    const hide = new Set(f.hide || []);
+    const allPx = names.map(k => P(k));
+    const cen = allPx.length ? [allPx.reduce((s, p) => s + p[0], 0) / allPx.length, allPx.reduce((s, p) => s + p[1], 0) / allPx.length] : [W / 2, H / 2];
+    const POS = { n: [0, -1], ne: [.75, -.75], e: [1, 0], se: [.75, .75], s: [0, 1], sw: [-.75, .75], w: [-1, 0], nw: [-.75, -.75] };
+    for (const dname of (f.dots || [])) { const p = P(dname); body.push(`<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="3" fill="#222"/>`); }
+    names.forEach((k, i) => {
+      if (hide.has(k)) return;
+      const p = allPx[i], pos = pts[k][2];
+      let d = POS[pos] || unit([p[0] - cen[0], p[1] - cen[1]]);
+      if (!POS[pos] && Math.hypot(p[0] - cen[0], p[1] - cen[1]) < 1) d = POS.ne;
+      labels.push(T([p[0] + d[0] * 14, p[1] + d[1] * 14 + 5], k, 'font-style="italic" font-size="16" text-anchor="middle" font-family="Times New Roman, serif"'));
+    });
+    if (checkOnly) return '';
+    const pad = 18;
+    const svg = `<svg viewBox="${-pad} ${-pad} ${W + pad * 2} ${r1(H + pad * 2)}" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, sans-serif" fill="#222">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#555"/></marker></defs>
+      ${back.join('')}${body.join('')}${labels.join('')}</svg>`;
+    return `<div class="figure">${svg}${f.note ? `<div class="note">${esc(f.note)}</div>` : ''}</div>`;
+  } catch (e) {
+    if (checkOnly) return e.message;
+    return `<div class="figure"><div class="figerr">図を表示できません(${esc(e.message)})</div></div>`;
+  }
+}
+
+/* =====================================================================
+   画面
+   ===================================================================== */
+const App = {};
+const S = { role: null, a: { tab: 'update', check: null, status: '', result: null, busy: false, open: {} }, b: {} };
+
+function render() {
+  if (!S.role) return renderGate();
+  if (S.role === 'A') return renderA();
+  return renderB();
+}
+
+/* ---------- 番号入力 ---------- */
+function renderGate() {
+  if (!CONFIG.PASS_A_HASH || !CONFIG.PASS_B_HASH) return renderSetup();
+  $app.innerHTML = `
+    <h1 style="text-align:center;margin-top:48px">宿題</h1>
+    <div class="card">
+      <label for="pin">4けたの番号を入れてください</label>
+      <input id="pin" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off">
+      <div id="gmsg"></div>
+      <div style="margin-top:12px"><button class="primary" onclick="App.login()">ひらく</button></div>
+    </div>`;
+  const pin = document.getElementById('pin');
+  pin.addEventListener('input', () => { pin.value = pin.value.replace(/\D/g, '').slice(0, 4); if (pin.value.length === 4) App.login(); });
+  pin.addEventListener('keydown', e => { if (e.key === 'Enter') App.login(); });
+  setTimeout(() => pin.focus(), 50);
+}
+App.login = async function () {
+  const pin = document.getElementById('pin'); const v = (pin.value || '').trim();
+  const m = document.getElementById('gmsg');
+  if (!/^\d{4}$/.test(v)) { m.innerHTML = '<div class="msg err">4けたの数字を入れてください</div>'; return; }
+  const h = await sha256hex(CONFIG.SALT + v);
+  if (h === CONFIG.PASS_A_HASH) { LS.set('kq_role', { role: 'A', h }); S.role = 'A'; render(); }
+  else if (h === CONFIG.PASS_B_HASH) { LS.set('kq_role', { role: 'B', h }); S.role = 'B'; App.bStart(); }
+  else { pin.value = ''; m.innerHTML = '<div class="msg err">番号が違います</div>'; }
+};
+App.logout = async function () {
+  if (!await confirmBox('番号入力の画面に戻りますか?\n(次に開くときは番号の入力が必要です)', '戻る')) return;
+  LS.del('kq_role'); S.role = null; render();
+};
+function renderSetup() {
+  $app.innerHTML = `
+    <h1>初期設定</h1>
+    <div class="msg warn">番号がまだ設定されていません。A機能(先生)とB機能(生徒)の番号を決めてください。</div>
+    <div class="card">
+      <label>A機能(先生用)の4けたの番号</label><input id="sa" inputmode="numeric" maxlength="4" autocomplete="off">
+      <label>B機能(生徒用)の4けたの番号</label><input id="sb" inputmode="numeric" maxlength="4" autocomplete="off">
+      <div style="margin-top:12px"><button class="primary" onclick="App.makeHash()">設定用の2行を作る</button></div>
+      <div id="smsg"></div>
+    </div>`;
+}
+App.makeHash = async function () {
+  const a = document.getElementById('sa').value.trim(), b = document.getElementById('sb').value.trim();
+  const m = document.getElementById('smsg');
+  if (!/^\d{4}$/.test(a) || !/^\d{4}$/.test(b)) { m.innerHTML = '<div class="msg err">どちらも4けたの数字にしてください</div>'; return; }
+  if (a === b) { m.innerHTML = '<div class="msg err">AとBは別の番号にしてください</div>'; return; }
+  const lines = `  PASS_A_HASH: '${await sha256hex(CONFIG.SALT + a)}',\n  PASS_B_HASH: '${await sha256hex(CONFIG.SALT + b)}',`;
+  m.innerHTML = `<p class="sub">index.html の上の方にある PASS_A_HASH と PASS_B_HASH の2行を、次の2行と差し替えてください。番号そのものはファイルに残りません。</p>
+    <textarea readonly style="min-height:90px">${esc(lines)}</textarea>
+    <button onclick="App.copyFrom(this)">コピー</button>`;
+};
+App.copyFrom = async function (btn) { const ta = btn.parentElement.querySelector('textarea'); toast(await copyText(ta.value) ? 'コピーしました' : 'コピーできませんでした'); };
+
+/* =====================================================================
+   A機能(先生用)
+   ===================================================================== */
+function ghConf() {
+  const c = LS.get('kq_a_gh', {});
+  let owner = c.owner, repo = c.repo;
+  if (!owner && /\.github\.io$/.test(location.hostname)) owner = location.hostname.split('.')[0];
+  if (!repo && /\.github\.io$/.test(location.hostname)) repo = location.pathname.split('/').filter(Boolean)[0] || location.hostname;
+  return { owner: owner || '', repo: repo || '', branch: c.branch || 'main', path: c.path || CONFIG.HOMEWORK_PATH, token: c.token || '' };
+}
+async function gh(path, opts) {
+  const c = ghConf();
+  const res = await fetch('https://api.github.com' + path, Object.assign({}, opts, {
+    headers: Object.assign({ Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + c.token, 'X-GitHub-Api-Version': '2022-11-28' }, (opts && opts.headers) || {})
+  }));
+  let data = null; try { data = await res.json(); } catch (e) {}
+  return { status: res.status, ok: res.ok, data };
+}
+const ghPath = c => `/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${c.path.split('/').map(encodeURIComponent).join('/')}`;
+
+function renderA() {
+  const t = S.a.tab;
+  $app.innerHTML = `
+    <div class="topbar"><div class="side"></div><div class="title">先生用(A機能)</div><div class="side"><button class="ghost" onclick="App.logout()">終了</button></div></div>
+    <div class="tabs">
+      <button class="${t === 'update' ? 'on' : ''}" onclick="App.aTab('update')">宿題の更新</button>
+      <button class="${t === 'result' ? 'on' : ''}" onclick="App.aTab('result')">結果</button>
+      <button class="${t === 'settings' ? 'on' : ''}" onclick="App.aTab('settings')">設定</button>
+    </div>
+    <div id="apane"></div>`;
+  ({ update: renderAUpdate, result: renderAResult, settings: renderASettings })[t]();
+}
+App.aTab = t => { S.a.tab = t; renderA(); };
+
+function renderAUpdate() {
+  const c = ghConf();
+  const ready = c.owner && c.repo && c.token;
+  const ck = S.a.check;
+  let sum = '';
+  if (ck) {
+    if (ck.errors.length) sum = `<div class="msg err"><b>直す必要があります(${ck.errors.length}件)</b><br>${ck.errors.slice(0, 20).map(esc).join('<br>')}${ck.errors.length > 20 ? '<br>…' : ''}</div>`;
+    else sum = `<div class="msg ok"><b>形式に問題はありません</b><br>${ck.src.sets.map(s => `${esc(subjName(s.subject))}: ${s.problems.length}問${s.due ? '(締切 ' + fmtDue(s.due) + ')' : ''}`).join('<br>')}</div>`;
+  }
+  document.getElementById('apane').innerHTML = `
+    ${ready ? '' : '<div class="msg warn">先に「設定」タブでGitHubの情報とトークンを入れてください。</div>'}
+    <div class="card">
+      <label for="src">問題データ(Claudeが作ったものを貼り付け)</label>
+      <textarea id="src" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder='{"format": "kq-homework/1", ...}'>${esc(S.a.srcText || '')}</textarea>
+      <div class="row" style="margin-top:10px">
+        <button onclick="App.aCheck()">形式チェック</button>
+        <button class="primary" onclick="App.aUpdate()" ${ready && ck && !ck.errors.length && !S.a.busy ? '' : 'disabled'}>更新する</button>
+      </div>
+      ${sum}
+      <div id="ustat">${S.a.status || ''}</div>
+    </div>
+    <p class="sub small">更新すると、今出ている宿題は全部入れ替わります。問題文や正解はこの画面には表示しません。</p>`;
+  document.getElementById('src').addEventListener('input', e => { S.a.srcText = e.target.value; if (S.a.check) { S.a.check = null; renderAUpdate(); } });
+}
+App.aCheck = function () {
+  const text = document.getElementById('src').value; S.a.srcText = text; S.a.status = '';
+  let src;
+  try { src = JSON.parse(text); } catch (e) { S.a.check = { errors: ['JSONとして読めません: ' + e.message] }; return renderAUpdate(); }
+  const v = validateHomework(src);
+  S.a.check = { errors: v.errors, src };
+  renderAUpdate();
+};
+App.aUpdate = async function () {
+  const ck = S.a.check; if (!ck || ck.errors.length) return;
+  if (!await confirmBox('宿題を更新しますか?\n今出ている宿題と、生徒の途中経過は消えます。', '更新する')) return;
+  const c = ghConf(); S.a.busy = true;
+  const set = html => { S.a.status = html; const el = document.getElementById('ustat'); if (el) el.innerHTML = html; };
+  set('<div class="msg info">GitHubの今のファイルを確認しています…</div>');
+  try {
+    let sha, prevNo = 0;
+    const cur = await gh(ghPath(c) + '?ref=' + encodeURIComponent(c.branch));
+    if (cur.status === 200) { sha = cur.data.sha; try { prevNo = JSON.parse(b64ToUtf8(cur.data.content)).hwNo || 0; } catch (e) {} }
+    else if (cur.status !== 404) throw new Error(ghErr(cur));
+    const hwNo = (prevNo % 1023) + 1;
+    const file = buildHomeworkFile(ck.src, hwNo);
+    set('<div class="msg info">書き込んでいます…</div>');
+    const body = { message: `宿題を更新 (宿題番号 ${hwNo})`, content: utf8ToB64(JSON.stringify(file)), branch: c.branch };
+    if (sha) body.sha = sha;
+    const put = await gh(ghPath(c), { method: 'PUT', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
+    if (!put.ok) throw new Error(ghErr(put));
+    LS.set('kq_a_last', { hwNo, at: Date.now(), sets: ck.src.sets.map(s => ({ subject: s.subject, n: s.problems.length })) });
+    S.a.check = null; S.a.srcText = '';
+    set(`<div class="msg ok">書き込みました(宿題番号 ${hwNo})。<br>生徒の画面に反映されるのを待っています…</div>`);
+    renderAUpdate();
+    App.aWatch(hwNo);
+  } catch (e) {
+    set(`<div class="msg err">更新できませんでした: ${esc(e.message)}</div>`);
+  } finally { S.a.busy = false; }
+};
+function ghErr(r) {
+  if (r.status === 401) return 'トークンが正しくないか、期限が切れています(401)';
+  if (r.status === 403) return 'このトークンには書き込みの許可がありません(403)';
+  if (r.status === 404) return 'リポジトリまたはブランチが見つかりません(404)';
+  if (r.status === 409 || r.status === 422) return 'ファイルが同時に変更されました。もう一度お試しください(' + r.status + ')';
+  return (r.data && r.data.message ? r.data.message : '通信エラー') + ' (' + r.status + ')';
+}
+App.aWatch = async function (hwNo) {
+  const start = Date.now();
+  while (Date.now() - start < 6 * 60 * 1000) {
+    await new Promise(r => setTimeout(r, 8000));
+    try {
+      const res = await fetch(CONFIG.HOMEWORK_PATH + '?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) { const j = await res.json(); if (j.hwNo === hwNo) { S.a.status = `<div class="msg ok"><b>反映されました</b>(宿題番号 ${hwNo})。生徒が開くと新しい宿題が出ます。</div>`; if (S.role === 'A' && S.a.tab === 'update') renderAUpdate(); return; } }
+    } catch (e) {}
+    const sec = Math.round((Date.now() - start) / 1000);
+    const el = document.getElementById('ustat');
+    if (el && S.role === 'A') el.innerHTML = S.a.status = `<div class="msg info">書き込みました(宿題番号 ${hwNo})。反映を待っています…(${sec}秒)<br><span class="small">ふつう1〜2分かかります</span></div>`;
+  }
+  S.a.status = `<div class="msg warn">書き込みは済んでいますが、6分たっても反映を確認できませんでした。GitHubの「Actions」タブで公開の状況を確認してください。</div>`;
+  if (S.role === 'A' && S.a.tab === 'update') renderAUpdate();
+};
+
+function renderAResult() {
+  const hist = LS.get('kq_a_hist', []);
+  const r = S.a.result;
+  let shown = '';
+  if (r && r.err) shown = `<div class="msg err">${esc(r.err)}</div>`;
+  else if (r) shown = resultCard(r.d, true);
+  const rows = hist.slice().sort((x, y) => y.minutes - x.minutes).map(h => {
+    const d = new Date(EPOCH + h.minutes * 60000);
+    const first = h.states.filter(s => s === 1).length, fin = h.states.filter(s => s === 1 || s === 2).length;
+    const open = S.a.open[h.code];
+    return `<tr onclick="App.aToggle('${esc(h.code)}')" style="cursor:pointer"><td>${fmtDate(d).slice(5)}</td><td>${subjBadge(h.subject)}</td><td>#${h.hwNo}</td><td>${first}/${h.n}</td><td>${fin}/${h.n}</td></tr>
+      ${open ? `<tr><td colspan="5">${marksHtml(h.states)}<div class="mono small sub" style="margin-top:6px">${esc(h.code)}</div><button class="link danger" onclick="event.stopPropagation();App.aDel('${esc(h.code)}')">この記録を消す</button></td></tr>` : ''}`;
+  }).join('');
+  document.getElementById('apane').innerHTML = `
+    <div class="card">
+      <label for="rc">生徒から届いた結果コード</label>
+      <input id="rc" class="mono" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="例: Ab3dE…">
+      <div style="margin-top:10px"><button class="primary" onclick="App.aRead()">読み込む</button></div>
+      ${shown}
+    </div>
+    <h2>これまでの結果</h2>
+    ${hist.length ? `<div class="card" style="padding:8px 12px"><table><tr><th>表示日時</th><th>教科</th><th>宿題</th><th>初回○</th><th>最終○</th></tr>${rows}</table></div>
+      <p class="sub small">行を押すと問題ごとの結果を表示します。</p>` : '<p class="sub">まだありません</p>'}
+    <h2>バックアップ</h2>
+    <div class="row"><button onclick="App.aExport()">書き出す</button><button onclick="document.getElementById('imp').click()">読み込む</button></div>
+    <input id="imp" type="file" accept="application/json,.json" style="display:none" onchange="App.aImport(this)">
+    <p class="sub small">結果の記録はこのスマホの中だけにあります。ときどき書き出して保存してください。</p>`;
+}
+function marksHtml(states) {
+  return `<div class="marks">${states.map((s, i) => `<span>${i + 1}${s === 1 || s === 2 ? '<b style="color:var(--ok)">○</b>' : '<b style="color:var(--ng)">×</b>'}${s === 2 ? '<small>直</small>' : s === 3 ? '<small>見</small>' : ''}</span>`).join('')}</div>
+    <p class="sub small">直 = 解き直しで○ / 見 = 解答を見た</p>`;
+}
+function resultCard(d, withSaveNote) {
+  const first = d.states.filter(s => s === 1).length, fin = d.states.filter(s => s === 1 || s === 2).length, seen = d.states.filter(s => s === 3).length;
+  return `<div class="msg ok" style="color:var(--ink)">
+    <div class="spread"><div>${subjBadge(d.subject)} 宿題番号 #${d.hwNo}</div><div class="small sub">${fmtDate(d.date)}</div></div>
+    <p>全${d.n}問 / 初回で○ <b>${first}</b> / 解き直しで○ <b>${fin - first}</b> / 解答を見た <b>${seen}</b> / ×のまま <b>${d.n - fin - seen}</b></p>
+    ${marksHtml(d.states)}
+    ${withSaveNote ? '<p class="small sub">記録に保存しました。</p>' : ''}</div>`;
+}
+App.aRead = function () {
+  const code = document.getElementById('rc').value.normalize('NFKC').replace(/\s+/g, '');
+  try {
+    const d = decodeResult(code);
+    const hist = LS.get('kq_a_hist', []);
+    if (!hist.some(h => h.code === code)) { hist.push({ code, subject: d.subject, hwNo: d.hwNo, minutes: d.minutes, n: d.n, states: d.states }); LS.set('kq_a_hist', hist); }
+    S.a.result = { d };
+  } catch (e) { S.a.result = { err: e.message }; }
+  renderAResult();
+};
+App.aToggle = code => { S.a.open[code] = !S.a.open[code]; renderAResult(); };
+App.aDel = async code => {
+  if (!await confirmBox('この記録を消しますか?', '消す')) return;
+  LS.set('kq_a_hist', LS.get('kq_a_hist', []).filter(h => h.code !== code)); renderAResult();
+};
+App.aExport = async function () {
+  const data = JSON.stringify({ format: 'kq-backup/1', exportedAt: new Date().toISOString(), hist: LS.get('kq_a_hist', []) }, null, 1);
+  const name = `宿題結果_${new Date().toISOString().slice(0, 10)}.json`;
+  try {
+    const file = new File([data], name, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' })); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+};
+App.aImport = function (input) {
+  const f = input.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const j = JSON.parse(rd.result); if (j.format !== 'kq-backup/1' || !Array.isArray(j.hist)) throw new Error();
+      const hist = LS.get('kq_a_hist', []); let add = 0;
+      j.hist.forEach(h => { if (h && h.code && !hist.some(x => x.code === h.code)) { hist.push(h); add++; } });
+      LS.set('kq_a_hist', hist); toast(`${add}件を読み込みました`, 'ok'); renderAResult();
+    } catch (e) { toast('バックアップのファイルではありません', 'err'); }
+  };
+  rd.readAsText(f); input.value = '';
+};
+
+function renderASettings() {
+  const c = ghConf();
+  document.getElementById('apane').innerHTML = `
+    <div class="card">
+      <label>GitHubのユーザー名(owner)</label><input id="g_owner" value="${esc(c.owner)}" autocapitalize="off" autocorrect="off">
+      <label>リポジトリ名(repo)</label><input id="g_repo" value="${esc(c.repo)}" autocapitalize="off" autocorrect="off">
+      <label>ブランチ</label><input id="g_branch" value="${esc(c.branch)}" autocapitalize="off" autocorrect="off">
+      <label>宿題ファイルの場所(リポジトリ内)</label><input id="g_path" value="${esc(c.path)}" autocapitalize="off" autocorrect="off">
+      <label>アクセストークン</label><input id="g_token" type="password" value="${esc(c.token)}" autocapitalize="off" autocorrect="off" autocomplete="off" placeholder="github_pat_…">
+      <div class="row" style="margin-top:12px"><button onclick="App.aSave(false)">保存</button><button class="primary" onclick="App.aSave(true)">保存して接続テスト</button></div>
+      <div id="gmsg2"></div>
+    </div>
+    <p class="sub small">トークンはこのスマホの中にだけ保存され、バックアップにも含まれません。スマホをなくしたときは、GitHubの設定からトークンを削除してください。</p>
+    ${(() => { const l = LS.get('kq_a_last', null); return l ? `<p class="sub small">最後の更新: 宿題番号 #${l.hwNo}(${fmtDate(new Date(l.at))})</p>` : ''; })()}`;
+}
+App.aSave = async function (test) {
+  const v = id => document.getElementById(id).value.trim();
+  LS.set('kq_a_gh', { owner: v('g_owner'), repo: v('g_repo'), branch: v('g_branch') || 'main', path: v('g_path') || CONFIG.HOMEWORK_PATH, token: v('g_token') });
+  const m = document.getElementById('gmsg2');
+  if (!test) { m.innerHTML = '<div class="msg ok">保存しました</div>'; return; }
+  const c = ghConf();
+  if (!c.owner || !c.repo || !c.token) { m.innerHTML = '<div class="msg err">ユーザー名・リポジトリ名・トークンを入れてください</div>'; return; }
+  m.innerHTML = '<div class="msg info">確認しています…</div>';
+  try {
+    const r = await gh(`/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}`);
+    if (!r.ok) throw new Error(ghErr(r));
+    if (r.data.permissions && r.data.permissions.push === false) throw new Error('このトークンには書き込みの許可がありません');
+    m.innerHTML = '<div class="msg ok">接続できました。宿題を更新できます。</div>';
+  } catch (e) { m.innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+};
+
+/* =====================================================================
+   B機能(生徒用)
+   ===================================================================== */
+// 保存する中身: { hwNo, hw, sets: [{ ans:[], ok:[], st:[], phase, code, cur }] }
+const BKEY = 'kq_b';
+const bSave = () => LS.set(BKEY, S.b.d);
+function freshState(hw) {
+  return { hwNo: hw.hwNo, hw, sets: hw.sets.map(s => ({ ans: s.problems.map(() => null), ok: s.problems.map(() => false), st: s.problems.map(() => 0), seen: s.problems.map(() => false), phase: 'solving', code: '', cur: 0 })) };
+}
+App.bStart = async function () {
+  S.b = { view: 'home', loading: true, warn: '', d: LS.get(BKEY, null) };
+  render();
+  try {
+    const res = await fetch(CONFIG.HOMEWORK_PATH + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status);
+    const hw = await res.json();
+    if (hw.format !== 'kq-hwfile/1' || !Array.isArray(hw.sets)) throw new Error('format');
+    if (!S.b.d || S.b.d.hwNo !== hw.hwNo) { S.b.d = freshState(hw); bSave(); }
+    else { S.b.d.hw = hw; bSave(); }
+  } catch (e) {
+    S.b.warn = S.b.d ? '宿題を読み込めなかったので、前に読み込んだ宿題を表示しています。電波のよいところで開き直してください。' : '宿題を読み込めませんでした。電波のよいところで開き直してください。';
+  }
+  S.b.loading = false; render();
+};
+function renderB() {
+  const b = S.b;
+  if (b.loading) { $app.innerHTML = '<p class="sub" style="text-align:center;margin-top:80px">読み込んでいます…</p>'; return; }
+  ({ home: bHome, q: bQuestion, confirm: bConfirm, check: bCheck, retry: bRetry, submit: bSubmit })[b.view]();
+}
+const setOf = () => S.b.d.hw.sets[S.b.si];
+const stOf = () => S.b.d.sets[S.b.si];
+App.bGo = (view, extra) => { Object.assign(S.b, { view }, extra || {}); window.scrollTo(0, 0); renderB(); };
+
+function bHome() {
+  const d = S.b.d;
+  const list = d && d.hw.sets.length ? d.hw.sets.map((s, si) => {
+    const st = d.sets[si];
+    const answered = st.ans.filter(a => a != null).length;
+    const chip = st.phase === 'submitted' ? '<span class="chip ok">提出済み</span>' : st.phase === 'checked' ? '<span class="chip warn">答え合わせ済み</span>' : answered ? `<span class="chip go">途中(${answered}/${s.problems.length})</span>` : '<span class="chip">まだ</span>';
+    return `<button class="card" style="text-align:left;display:block" onclick="App.bOpen(${si})">
+      <div class="spread"><div>${subjBadge(s.subject)}</div>${chip}</div>
+      <div style="font-size:18px;font-weight:600;margin-top:6px">${esc(s.title || subjName(s.subject))}</div>
+      <div class="sub">全${s.problems.length}問${s.due ? ' ・ 締切 ' + fmtDue(s.due) : ''}</div></button>`;
+  }).join('') : '<div class="card"><p>今は宿題がありません。</p></div>';
+  $app.innerHTML = `
+    <div class="topbar"><div class="side"></div><div class="title">宿題</div><div class="side"><button class="ghost" onclick="App.bStart()">更新</button></div></div>
+    ${S.b.warn ? `<div class="msg warn">${esc(S.b.warn)}</div>` : ''}
+    ${list}
+    <p style="text-align:center;margin-top:24px"><button class="link" onclick="App.logout()">番号を入れ直す</button></p>`;
+}
+App.bOpen = function (si) {
+  S.b.si = si; const st = stOf();
+  if (st.phase === 'submitted') return App.bGo('submit');
+  if (st.phase === 'checked') return App.bGo('check');
+  App.bGo('q', { qi: st.cur || 0 });
+};
+
+/* 問題の表示と入力 */
+function problemHtml(p, resp, mode) {
+  let input = '';
+  if (p.type === 'choice') {
+    input = `<div class="choices">${p.choices.map((c, i) => `<button class="${resp === i ? 'sel' : ''}" onclick="App.bAnswer(${i},'${mode}')"><span style="display:inline-block;width:1.8em;color:var(--sub)">${'アイウエオカ'[i]}</span>${esc(c)}</button>`).join('')}</div>`;
+  } else if (p.type === 'text') {
+    input = `<input id="tin" value="${esc(resp || '')}" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="ここに入力" enterkeyhint="done">`;
+  } else if (p.type === 'number') {
+    const v = resp || '';
+    const keys = ['7', '8', '9', 'BS', '4', '5', '6', '/', '1', '2', '3', '-', '0', '.', 'x', '+'];
+    input = `<div class="numdisp ${v ? '' : 'empty'}" id="nd">${v ? esc(v.replace(/-/g, '−')) : '答えを入力'}</div>
+      <div class="keypad">${keys.map(k => `<button class="${/[0-9.]/.test(k) ? '' : 'fn'}" onclick="App.bKey('${k}','${mode}')">${k === 'BS' ? '⌫' : k === '-' ? '−' : esc(k)}</button>`).join('')}</div>
+      <div style="margin-top:8px"><button class="link" onclick="App.bKey('CLR','${mode}')">ぜんぶ消す</button></div>`;
+  } else if (p.type === 'order') {
+    const seq = Array.isArray(resp) ? resp : [];
+    input = `<div class="order-built">${seq.length ? seq.map((ix, j) => `<button class="btn tok" onclick="App.bOrd('del',${j},'${mode}')">${esc(p.items[ix])}</button>`).join('') : '<span class="sub small" style="padding:10px">下の語句を順番に押してください</span>'}</div>
+      <div class="order-pool">${p.items.map((it, ix) => `<button class="btn tok ${seq.includes(ix) ? 'used' : ''}" onclick="App.bOrd('add',${ix},'${mode}')">${esc(it)}</button>`).join('')}</div>
+      ${seq.length ? `<button class="link" onclick="App.bOrd('clr',0,'${mode}')">やり直す</button>` : ''}`;
+  }
+  return `${p.unit ? `<div class="unit">${esc(p.unit)}</div>` : ''}<div class="prompt">${esc(p.prompt)}</div>${p.figure ? renderFigure(p.figure) : ''}${input}`;
+}
+function curResp(mode) { const st = stOf(); return mode === 'retry' ? S.b.retryResp : st.ans[S.b.qi]; }
+function setResp(mode, v) {
+  if (mode === 'retry') { S.b.retryResp = v; S.b.retryRes = null; }
+  else { stOf().ans[S.b.qi] = (v === '' || (Array.isArray(v) && !v.length)) ? null : v; bSave(); }
+}
+App.bAnswer = (i, mode) => { setResp(mode, i); renderB(); };
+App.bKey = function (k, mode) {
+  let v = curResp(mode) || '';
+  if (k === 'BS') v = v.slice(0, -1); else if (k === 'CLR') v = ''; else if (v.length < 24) v += k;
+  setResp(mode, v);
+  const nd = document.getElementById('nd');
+  if (nd) { nd.textContent = v ? v.replace(/-/g, '−') : '答えを入力'; nd.className = 'numdisp' + (v ? '' : ' empty'); }
+  if (mode === 'retry') { const b = document.getElementById('rbtn'); if (b) b.disabled = !v; }
+};
+App.bOrd = function (op, x, mode) {
+  let seq = (curResp(mode) || []).slice();
+  if (op === 'add' && !seq.includes(x)) seq.push(x); else if (op === 'del') seq.splice(x, 1); else if (op === 'clr') seq = [];
+  setResp(mode, seq); renderB();
+};
+function bindText(mode) {
+  const t = document.getElementById('tin'); if (!t) return;
+  t.addEventListener('input', () => { setResp(mode, t.value); if (mode === 'retry') { const b = document.getElementById('rbtn'); if (b) b.disabled = !t.value.trim(); } });
+  t.addEventListener('keydown', e => { if (e.key === 'Enter') t.blur(); });
+}
+
+function bQuestion() {
+  const s = setOf(), st = stOf(), qi = S.b.qi, n = s.problems.length;
+  st.cur = qi; bSave();
+  const p = s.problems[qi];
+  $app.innerHTML = `
+    <div class="topbar"><div class="side"><button class="ghost" onclick="App.bGo('home')">‹ 一覧</button></div><div class="title">${esc(s.title || subjName(s.subject))}</div><div class="side"><button class="ghost" onclick="App.bGo('confirm')">確認</button></div></div>
+    <div class="spread sub small"><span>${qi + 1} / ${n}</span><span>${st.ans.filter(a => a != null).length}問 回答済み</span></div>
+    <div class="progress"><div style="width:${((qi + 1) / n) * 100}%"></div></div>
+    <div class="card">${problemHtml(p, st.ans[qi], 'main')}</div>
+    <div class="navbar"><div class="inner">
+      <button onclick="App.bMove(-1)" ${qi === 0 ? 'disabled' : ''}>‹ 前へ</button>
+      ${qi === n - 1 ? '<button class="primary" onclick="App.bGo(\'confirm\')">確認へ</button>' : '<button class="primary" onclick="App.bMove(1)">次へ ›</button>'}
+    </div></div>`;
+  bindText('main');
+}
+App.bMove = d => { const n = setOf().problems.length; App.bGo('q', { qi: Math.max(0, Math.min(n - 1, S.b.qi + d)) }); };
+
+function bConfirm() {
+  const s = setOf(), st = stOf();
+  const left = st.ans.map((a, i) => a == null ? i : -1).filter(i => i >= 0);
+  $app.innerHTML = `
+    <div class="topbar"><div class="side"><button class="ghost" onclick="App.bGo('q',{qi:${st.cur || 0}})">‹ 戻る</button></div><div class="title">確認</div><div class="side"></div></div>
+    <p>${left.length ? `<b style="color:var(--ng)">まだ答えていない問題が${left.length}問あります。</b>赤い番号を押して答えてください。` : 'すべての問題に答えました。答え合わせをしましょう。'}</p>
+    <div class="grid">${s.problems.map((_, i) => `<button class="${st.ans[i] == null ? 'todo' : 'done'}" onclick="App.bGo('q',{qi:${i}})">${i + 1}</button>`).join('')}</div>
+    <div class="navbar"><div class="inner"><button class="primary" onclick="App.bCheck()" ${left.length ? 'disabled' : ''}>答え合わせ</button></div></div>`;
+}
+App.bCheck = async function () {
+  if (!await confirmBox('答え合わせをしますか?\n答え合わせをした後は、最初の答えを変えられません。', '答え合わせ')) return;
+  const s = setOf(), st = stOf(), hw = S.b.d.hw;
+  s.problems.forEach((p, i) => { const ok = judge(p, secretOf(hw, S.b.si, i), st.ans[i]); st.ok[i] = ok; st.st[i] = ok ? 1 : 0; });
+  st.phase = 'checked'; bSave(); App.bGo('check');
+};
+
+function bCheck() {
+  const s = setOf(), st = stOf(), hw = S.b.d.hw;
+  const nOk = st.ok.filter(Boolean).length;
+  const rows = s.problems.map((p, i) => {
+    const ok = st.ok[i];
+    const lab = st.st[i] === 2 ? '<span class="chip ok">解き直しで○</span>' : st.seen[i] ? '<span class="chip warn">解答を見た</span>' : '';
+    const show = S.b.showAns === i;
+    const sec = show ? secretOf(hw, S.b.si, i) : null;
+    return `<div class="qrow">
+      <div class="row" style="gap:8px"><div class="mark ${ok ? 'o' : 'x'}">${ok ? '○' : '×'}</div><div class="qtext"><b>${i + 1}.</b> ${esc(p.prompt.replace(/\s+/g, ' '))}</div></div>
+      ${lab ? `<div style="padding-left:44px">${lab}</div>` : ''}
+      ${!ok ? `<div class="actions"><button onclick="App.bRetry(${i})">解き直し</button><button onclick="App.bShow(${i})">${show ? '解答を閉じる' : '解答を見る'}</button></div>` : ''}
+      ${show ? `<div class="answerbox"><b>正解:</b> ${esc(answerText(p, sec))}${sec.e ? `<br><span class="small">${esc(sec.e)}</span>` : ''}</div>` : ''}
+    </div>`;
+  }).join('');
+  $app.innerHTML = `
+    <div class="topbar"><div class="side"><button class="ghost" onclick="App.bGo('home')">‹ 一覧</button></div><div class="title">答え合わせ</div><div class="side"></div></div>
+    <div class="card" style="text-align:center"><div class="sub">${esc(s.title || subjName(s.subject))}</div><div style="font-size:32px;font-weight:700">○ ${nOk} <span class="sub" style="font-size:18px">/ ${s.problems.length}</span></div>
+      <div class="sub small">×の問題は「解き直し」ができます。</div></div>
+    <div class="card">${rows}</div>
+    <div class="navbar"><div class="inner"><button class="primary" onclick="App.bSubmit()">提出する</button></div></div>`;
+}
+App.bShow = async function (i) {
+  const st = stOf();
+  if (S.b.showAns === i) { S.b.showAns = null; return renderB(); }
+  if (!st.seen[i]) {
+    if (!await confirmBox('解答を見ますか?\n見たことは先生に伝わります。', '見る')) return;
+    st.seen[i] = true; st.st[i] = 3; bSave();
+  }
+  S.b.showAns = i; renderB();
+};
+App.bRetry = i => App.bGo('retry', { qi: i, retryResp: null, retryRes: null });
+function bRetry() {
+  const s = setOf(), qi = S.b.qi, p = s.problems[qi], res = S.b.retryRes;
+  $app.innerHTML = `
+    <div class="topbar"><div class="side"><button class="ghost" onclick="App.bGo('check')">‹ 戻る</button></div><div class="title">${qi + 1}問目の解き直し</div><div class="side"></div></div>
+    <div class="card">${problemHtml(p, S.b.retryResp, 'retry')}</div>
+    ${res == null ? '' : `<div class="feedback ${res ? 'o' : 'x'}">${res ? '○ 正解!' : '× まだ違います'}</div>`}
+    <div class="navbar"><div class="inner">
+      ${res === true ? `<button class="primary" onclick="App.bGo('check')">答え合わせに戻る</button>` : `<button id="rbtn" class="primary" onclick="App.bRetryJudge()" ${S.b.retryResp == null || S.b.retryResp === '' || (Array.isArray(S.b.retryResp) && !S.b.retryResp.length) ? 'disabled' : ''}>答える</button>`}
+    </div></div>`;
+  bindText('retry');
+}
+App.bRetryJudge = function () {
+  const st = stOf(), qi = S.b.qi, hw = S.b.d.hw, p = setOf().problems[qi];
+  const ok = judge(p, secretOf(hw, S.b.si, qi), S.b.retryResp);
+  S.b.retryRes = ok;
+  if (ok) { st.ok[qi] = true; if (st.st[qi] !== 3) st.st[qi] = 2; bSave(); }
+  renderB();
+};
+App.bSubmit = async function () {
+  const st = stOf();
+  const left = st.ok.filter(o => !o).length;
+  if (!await confirmBox((left ? `×の問題が${left}問残っています。\n` : '') + '提出しますか?\n提出すると、この教科はもう解き直せません。', '提出する')) return;
+  const s = setOf();
+  st.code = encodeResult({ subject: s.subject, hwNo: S.b.d.hwNo, minutes: nowMinutes(), states: st.st });
+  st.phase = 'submitted'; bSave(); App.bGo('submit');
+};
+function bSubmit() {
+  const s = setOf(), st = stOf();
+  let when = ''; try { when = fmtDate(decodeResult(st.code).date); } catch (e) {}
+  $app.innerHTML = `
+    <div class="topbar"><div class="side"><button class="ghost" onclick="App.bGo('home')">‹ 一覧</button></div><div class="title">提出</div><div class="side"></div></div>
+    <div class="card" style="text-align:center">
+      <div>${subjBadge(s.subject)} ${esc(s.title || '')}</div>
+      <p style="font-size:18px;font-weight:600">このコードを先生にLINEで送ってください</p>
+      <div class="code" id="code">${esc(st.code)}</div>
+      <p class="sub small">${when} に表示</p>
+      <div class="row" style="margin-top:12px"><button onclick="App.bCopy()">コピー</button><button class="primary" onclick="App.bShare()">送る</button></div>
+    </div>
+    <p class="sub small">このコードは、この画面にいつでも戻って見られます。</p>`;
+}
+App.bCopy = async () => toast(await copyText(stOf().code) ? 'コピーしました' : 'コピーできませんでした');
+App.bShare = () => shareText(stOf().code);
+
+/* ---------- 起動 ---------- */
+(function boot() {
+  const r = LS.get('kq_role', null);
+  if (r && r.role === 'A' && r.h === CONFIG.PASS_A_HASH && CONFIG.PASS_A_HASH) { S.role = 'A'; render(); }
+  else if (r && r.role === 'B' && r.h === CONFIG.PASS_B_HASH && CONFIG.PASS_B_HASH) { S.role = 'B'; App.bStart(); }
+  else render();
+})();
+</script>
+</body>
+</html>
